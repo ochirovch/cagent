@@ -16,10 +16,8 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/cloudradar-monitoring/cagent/pkg/hwinfo"
-	"github.com/cloudradar-monitoring/cagent/pkg/monitoring/docker"
-	"github.com/cloudradar-monitoring/cagent/pkg/monitoring/services"
 	"github.com/cloudradar-monitoring/cagent/pkg/monitoring/vmstat"
+	"github.com/cloudradar-monitoring/cagent/pkg/smart"
 )
 
 func (ca *Cagent) initHubHTTPClient() {
@@ -149,127 +147,155 @@ func (ca *Cagent) GetAllMeasurements() (MeasurementsMap, error) {
 	var errs []string
 	var measurements = make(MeasurementsMap)
 
-	cpum, err := ca.CPUWatcher().Results()
-	if err != nil {
-		// no need to log because already done inside cpu.Results()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("cpu.", cpum)
-
-	info, err := ca.HostInfoResults()
-	if err != nil {
-		// no need to log because already done inside HostInfoResults()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("system.", info)
-
-	ipResults, err := IPAddresses()
-	if err != nil {
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("system.", ipResults)
-
-	fsResults, err := ca.FSWatcher().Results()
-	if err != nil {
-		// no need to log because already done inside fs.Results()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("fs.", fsResults)
-
-	netResults, err := ca.NetWatcher().Results()
-	if err != nil {
-		// no need to log because already done inside net.Results()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("net.", netResults)
-
-	proc, err := ca.ProcessesResult()
-	if err != nil {
-		// no need to log because already done inside ProcessesResult()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("proc.", proc)
-
-	mem, err := ca.MemResults()
-	if err != nil {
-		// no need to log because already done inside MemResults()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("mem.", mem)
-
-	swap, err := ca.SwapResults()
-	if err != nil {
-		// no need to log because already done inside MemResults()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("swap.", swap)
-
-	ca.getVMStatMeasurements(func(name string, meas MeasurementsMap, err error) {
-		if err == nil {
-			measurements = measurements.AddWithPrefix("virt."+name+".", meas)
-		} else {
-			errs = append(errs, err.Error())
-		}
-	})
-
-	ca.hwInventory.Do(func() {
-		if hwInfo, err := hwinfo.Inventory(); err != nil {
-			errs = append(errs, err.Error())
-		} else {
-			measurements = measurements.AddInnerWithPrefix("hw.inventory", hwInfo)
-		}
-	})
-
-	if runtime.GOOS == "linux" {
-		raid, err := ca.RaidState()
-		if err != nil {
-			// no need to log because already done inside RaidState()
-			errs = append(errs, err.Error())
-		}
-
-		measurements = measurements.AddWithPrefix("raid.", raid)
-	}
-
-	if runtime.GOOS == "windows" {
-		wu, err := ca.WindowsUpdatesWatcher().WindowsUpdates()
-		if err != nil {
-			// no need to log because already done inside MemResults()
-			errs = append(errs, err.Error())
-		}
-
-		measurements = measurements.AddWithPrefix("windows_update.", wu)
-	}
-
-	servicesList, err := services.ListServices()
-	if err != nil && err != services.ErrorNotImplementedForOS {
-		// no need to log because already done inside ListServices()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("services.", servicesList)
-
-	containersList, err := docker.ListContainers()
-	if err != nil {
-		// no need to log because already done inside ListContainers()
-		errs = append(errs, err.Error())
-	}
-
-	measurements = measurements.AddWithPrefix("docker.", containersList)
+	// cpum, err := ca.CPUWatcher().Results()
+	// if err != nil {
+	// 	// no need to log because already done inside cpu.Results()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("cpu.", cpum)
+	//
+	// info, err := ca.HostInfoResults()
+	// if err != nil {
+	// 	// no need to log because already done inside HostInfoResults()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("system.", info)
+	//
+	// ipResults, err := IPAddresses()
+	// if err != nil {
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("system.", ipResults)
+	//
+	// fsResults, err := ca.FSWatcher().Results()
+	// if err != nil {
+	// 	// no need to log because already done inside fs.Results()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("fs.", fsResults)
+	//
+	// netResults, err := ca.NetWatcher().Results()
+	// if err != nil {
+	// 	// no need to log because already done inside net.Results()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("net.", netResults)
+	//
+	// proc, err := ca.ProcessesResult()
+	// if err != nil {
+	// 	// no need to log because already done inside ProcessesResult()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("proc.", proc)
+	//
+	// mem, err := ca.MemResults()
+	// if err != nil {
+	// 	// no need to log because already done inside MemResults()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("mem.", mem)
+	//
+	// swap, err := ca.SwapResults()
+	// if err != nil {
+	// 	// no need to log because already done inside MemResults()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("swap.", swap)
+	//
+	// ca.getVMStatMeasurements(func(name string, meas MeasurementsMap, err error) {
+	// 	if err == nil {
+	// 		measurements = measurements.AddWithPrefix("virt."+name+".", meas)
+	// 	} else {
+	// 		errs = append(errs, err.Error())
+	// 	}
+	// })
+	//
+	// ca.hwInventory.Do(func() {
+	// 	if hwInfo, err := hwinfo.Inventory(); err != nil {
+	// 		errs = append(errs, err.Error())
+	// 	} else {
+	// 		measurements = measurements.AddInnerWithPrefix("hw.inventory", hwInfo)
+	// 	}
+	// })
+	//
+	// if runtime.GOOS == "linux" {
+	// 	raid, err := ca.RaidState()
+	// 	if err != nil {
+	// 		// no need to log because already done inside RaidState()
+	// 		errs = append(errs, err.Error())
+	// 	}
+	//
+	// 	measurements = measurements.AddWithPrefix("raid.", raid)
+	// }
+	//
+	// if runtime.GOOS == "windows" {
+	// 	wu, err := ca.WindowsUpdatesWatcher().WindowsUpdates()
+	// 	if err != nil {
+	// 		// no need to log because already done inside MemResults()
+	// 		errs = append(errs, err.Error())
+	// 	}
+	//
+	// 	measurements = measurements.AddWithPrefix("windows_update.", wu)
+	// }
+	//
+	// servicesList, err := services.ListServices()
+	// if err != nil && err != services.ErrorNotImplementedForOS {
+	// 	// no need to log because already done inside ListServices()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("services.", servicesList)
+	//
+	// containersList, err := docker.ListContainers()
+	// if err != nil {
+	// 	// no need to log because already done inside ListContainers()
+	// 	errs = append(errs, err.Error())
+	// }
+	//
+	// measurements = measurements.AddWithPrefix("docker.", containersList)
 
 	if len(errs) == 0 {
 		measurements["cagent.success"] = 1
-		return measurements, nil
+	} else {
+		measurements["cagent.success"] = 0
 	}
 
-	measurements["cagent.success"] = 0
+	// measurements fetched below should not affect cagent.success
+	ca.smartInit.Do(func() {
+		if ca.Config.SMARTMonitoring {
+			if err := smart.DetectTools(); err == nil {
+				ca.smartAvailable = true
+			} else {
+				ca.smartAvailable = false
+				log.Error(err.Error())
+			}
+		} else {
+			ca.smartAvailable = false
+		}
+
+	})
+
+	if ca.smartAvailable {
+		res, _ := smart.Parse()
+		measurements = measurements.AddInnerWithPrefix("smartmon", res)
+
+		// for
+		// if len(err) > 0 {
+		// 	errs = append(errs, err...)
+		// }
+	}
+
+	if len(errs) == 0 {
+		return measurements, nil
+	}
 
 	return measurements, errors.New(strings.Join(errs, "; "))
 }

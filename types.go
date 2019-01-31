@@ -9,7 +9,7 @@ func (mm MeasurementsMap) AddWithPrefix(prefix string, m MeasurementsMap) Measur
 	return mm
 }
 
-func (mm MeasurementsMap) AddInnerWithPrefix(prefix string, m MeasurementsMap) MeasurementsMap {
+func (mm MeasurementsMap) AddInnerWithPrefix(prefix string, m interface{}) MeasurementsMap {
 	mm[prefix] = m
 
 	return mm

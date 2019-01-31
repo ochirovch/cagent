@@ -67,6 +67,8 @@ type Config struct {
 	VirtualMachinesStat []string `toml:"virtual_machines_stat" comment:"default ['hyper-v'], available options 'hyper-v'"`
 
 	HardwareInventory bool `toml:"hardware_inventory" comment:"default true"`
+
+	SMARTMonitoring bool `toml:"smart_monitoring" comment:"default true"`
 }
 
 func init() {
@@ -106,6 +108,7 @@ func NewConfig() *Config {
 		NetInterfaceExcludeLoopback:     true,
 		SystemFields:                    []string{"uname", "os_kernel", "os_family", "os_arch", "cpu_model", "fqdn", "memory_total_B"},
 		HardwareInventory:               true,
+		SMARTMonitoring:                 true,
 	}
 
 	if runtime.GOOS == "windows" {
